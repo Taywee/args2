@@ -1,0 +1,14 @@
+set(args2_VERSION 1.0.0)
+
+@PACKAGE_INIT@
+include(CMakeFindDependencyMacro)
+
+set_and_check(args2_INCLUDE_DIR "@PACKAGE_INCLUDE_INSTALL_DIR@")
+
+check_required_components(args2)
+
+if(TARGET args2::args2)
+  return()
+endif()
+
+include(${CMAKE_CURRENT_LIST_DIR}/args2Targets.cmake)
