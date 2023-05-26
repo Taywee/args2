@@ -17,70 +17,23 @@ set(INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_INCLUDEDIR}
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+option(ARGS2_TESTS OFF)
 
 add_library(
     args2
-
-        src/args2/temporary_directory.cxx
-        src/args2/temporary_file.cxx
-        src/args2/temporary_path.cxx
+    INTERFACE
 )
-
-if (WIN32)
-target_sources(
-    args2
-
-    PRIVATE
-        src/args2/windows/file_handle.cxx
-        src/args2/windows/tempfile_support.cxx
-        src/args2/windows/env.cxx
-        src/args2/windows/error.cxx
-)
-else()
-target_sources(
-    args2
-
-    PRIVATE
-        src/args2/unix/file_handle.cxx
-        src/args2/unix/env.cxx
-        src/args2/unix/error.cxx
-)
-endif()
 
 set_property(
     TARGET args2
     PROPERTY POSITION_INDEPENDENT_CODE TRUE
 )
 
-target_compile_options(
-    args2
-    PRIVATE
-        -Wall
-        -Wextra
-        -Werror
-        -I${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
-target_compile_definitions(
-    args2
-    PRIVATE
-        -D_POSIX_C_SOURCE=200809L
-        -D_XOPEN_SOURCE=700
-        -D_XOPEN_SOURCE_EXTENDED=1
-        -D_ALL_SOURCE
-)
-
-target_link_libraries(args2 PUBLIC)
 
 install(
     FILES
-        src/args2/env.hxx
-        src/args2/error.hxx
-        src/args2/file_handle.hxx
-        src/args2/string_convert.hxx
-        src/args2/temporary_directory.hxx
-        src/args2/temporary_file.hxx
-        src/args2/temporary_path.hxx
+        src/args2/args2.hxx
+        src/args2/parser.hxx
 
     DESTINATION
         "${CMAKE_INSTALL_INCLUDEDIR}/args2"
@@ -121,4 +74,19 @@ install(
     DESTINATION
         "${CMAKE_INSTALL_LIBDIR}/cmake/args2"
 )
+
+if (${ARGS2_TESTS})
+    find_package(Catch2 3 REQUIRED)
+    add_executable(tests test/test.cxx)
+    target_link_libraries(tests PRIVATE Catch2::Catch2WithMain args2)
+    target_include_directories(tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+
+    include (CTest)
+    add_test(
+        NAME tests
+        COMMAND tests
+    )
+endif()
+
+
 
