@@ -14,6 +14,7 @@ namespace args2 {
 namespace parser {
 /** Similar to a type traits object, statically defines separators for each char
  * type.
+ * This can be used to customize the parser to a minimal degree, but probably shouldn't be.
  */
 template <typename CharT> struct Separators;
 
@@ -54,8 +55,8 @@ template <> struct Separators<char32_t> {
   static constexpr std::u32string_view long_value_separator = U"="sv;
 };
 
-template <typename CharT> struct Literals;
-
+/** A short flag without a value.  These can cluster.
+*/
 template <typename CharT> struct ShortFlag {
   CharT flag;
 
@@ -69,6 +70,8 @@ std::ostream &operator<<(std::basic_ostream<CharT> &os,
   return os;
 }
 
+/** A long flag without a value.
+*/
 template <typename CharT> struct LongFlag {
   std::basic_string_view<CharT> flag;
 
@@ -82,6 +85,10 @@ std::ostream &operator<<(std::basic_ostream<CharT> &os,
   return os;
 }
 
+/** A short flag with a value.  This can be on the tail end of a short flag
+* cluster, and the value may be appended to the end or specified as the next
+* argument.
+*/
 template <typename CharT> struct ShortValueFlag {
   CharT flag;
   std::basic_string_view<CharT> value;
@@ -96,6 +103,10 @@ std::ostream &operator<<(std::basic_ostream<CharT> &os,
   return os;
 }
 
+
+/** A long flag with a value.  The value may be the next argument, or attached
+* to this one separated by the separator.
+*/
 template <typename CharT> struct LongValueFlag {
   std::basic_string_view<CharT> flag;
   std::basic_string_view<CharT> value;
@@ -111,6 +122,8 @@ std::ostream &operator<<(std::basic_ostream<CharT> &os,
   return os;
 }
 
+/** A positional argument.
+*/
 template <typename CharT> struct Positional {
   std::basic_string_view<CharT> value;
 
