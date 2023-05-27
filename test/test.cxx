@@ -11,8 +11,7 @@ TEST_CASE("Parser can iterate short flags", "[shortflags]") {
     using Parser = args2::parser::Parser<char, decltype(args.begin())>;
 
     Parser parser(
-        args.cbegin(),
-        args.cend(),
+        args,
         {'a', 'b', 'c', 'd', 'e', 'f', 'g'},
         {},
         {},
@@ -39,8 +38,7 @@ TEST_CASE("Parser can get values from shortflags", "[shortflags]") {
     using Parser = args2::parser::Parser<char, decltype(args.begin())>;
 
     Parser parser(
-        args.cbegin(),
-        args.cend(),
+        args,
         {'a', 'b', 'c'},
         {'d'},
         {},
@@ -56,6 +54,29 @@ TEST_CASE("Parser can get values from shortflags", "[shortflags]") {
         args2::parser::Result<char>(args2::parser::ShortFlag<char>('b')),
         args2::parser::Result<char>(args2::parser::ShortFlag<char>('c')),
         args2::parser::Result<char>(args2::parser::ShortValueFlag<char>('d', "ef")),
+    }
+    );
+}
+
+TEST_CASE("Parser can parse long flags", "[longflags]") {
+    const std::vector<std::string> args{"--alpha", "--beta"};
+    using Parser = args2::parser::Parser<char, decltype(args.begin())>;
+
+    Parser parser(
+        args,
+        {'a', 'b', 'g'},
+        {'d'},
+        {"alpha", "beta", "gamma"},
+        {"delta"}
+        );
+
+    using Iterator = Parser::iterator;
+
+    std::vector<std::iterator_traits<Iterator>::value_type> collection;
+    std::copy(parser.begin(), parser.end(), std::back_inserter(collection));
+    REQUIRE(collection == std::vector<std::iterator_traits<Iterator>::value_type>{
+        args2::parser::Result<char>(args2::parser::LongFlag<char>("alpha")),
+        args2::parser::Result<char>(args2::parser::LongFlag<char>("beta")),
     }
     );
 }
