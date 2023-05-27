@@ -80,3 +80,26 @@ TEST_CASE("Parser can parse long flags", "[longflags]") {
     }
     );
 }
+TEST_CASE("Parser can parse values from long flags", "[longflags]") {
+    const std::vector<std::string> args{"--alpha", "one", "--gamma", "--beta=two"};
+    using Parser = args2::parser::Parser<char, decltype(args.begin())>;
+
+    Parser parser(
+        args,
+        {'a', 'b', 'g'},
+        {'d'},
+        {"gamma"},
+        {"alpha", "beta", "delta"}
+        );
+
+    using Iterator = Parser::iterator;
+
+    std::vector<std::iterator_traits<Iterator>::value_type> collection;
+    std::copy(parser.begin(), parser.end(), std::back_inserter(collection));
+    REQUIRE(collection == std::vector<std::iterator_traits<Iterator>::value_type>{
+        args2::parser::Result<char>(args2::parser::LongValueFlag<char>("alpha", "one")),
+        args2::parser::Result<char>(args2::parser::LongFlag<char>("gamma")),
+        args2::parser::Result<char>(args2::parser::LongValueFlag<char>("beta", "two")),
+    }
+    );
+}
