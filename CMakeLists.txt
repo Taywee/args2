@@ -77,7 +77,11 @@ install(
 
 if (${ARGS2_TESTS})
     find_package(Catch2 3 REQUIRED)
-    add_executable(tests test/test.cxx)
+    add_executable(
+        tests
+            test/test.cxx
+            test/parser.cxx
+    )
     target_link_libraries(tests PRIVATE Catch2::Catch2WithMain args2)
     target_include_directories(tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 

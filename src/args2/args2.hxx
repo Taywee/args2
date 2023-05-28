@@ -1,2 +1,1 @@
-namespace args2 {
-}
+namespace args2 {}
