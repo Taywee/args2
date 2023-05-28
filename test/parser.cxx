@@ -15,7 +15,7 @@ TEST_CASE("Parser can iterate short flags", "[shortflags]") {
   using Iterator = Parser::iterator;
 
   std::vector<std::iterator_traits<Iterator>::value_type> collection;
-  std::copy(parser.begin(), parser.end(), std::back_inserter(collection));
+  std::ranges::copy(parser, std::back_inserter(collection));
   REQUIRE(collection ==
           std::vector<std::iterator_traits<Iterator>::value_type>{
               args2::parser::Result<char>(args2::parser::ShortFlag<char>('a')),

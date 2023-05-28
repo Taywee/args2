@@ -10,7 +10,7 @@ default:
 	just --list
 
 format:
-	find ./src -name '*xx' -print0 | xargs -0 clang-format -i --style file
+	find ./src ./test -name '*xx' -print0 | xargs -0 clang-format -i --style file
 
 # Generate clangd compile_commands.json
 commands: generate-test

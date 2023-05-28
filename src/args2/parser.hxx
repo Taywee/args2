@@ -1,4 +1,5 @@
 #include <concepts>
+#include <cstdlib>
 #include <functional>
 #include <iostream>
 #include <iterator>
@@ -336,10 +337,14 @@ public:
         long_value_flags(long_value_flags) {
     current_item = next();
   }
+  Iterator() noexcept { current_item = next(); }
 
   bool operator==(const Iterator &other) const noexcept {
-    return it == other.it && short_flags_block == other.short_flags_block &&
-           current_item == other.current_item;
+    // Special case for default-constructed end iterator
+    return (it == end && other.it == other.end && !current_item &&
+            !other.current_item) ||
+           (it == other.it && short_flags_block == other.short_flags_block &&
+            current_item == other.current_item);
   }
   bool operator!=(const Iterator &other) const noexcept {
     return !(*this == other);
@@ -356,6 +361,9 @@ public:
     current_item = next();
     return prev;
   }
+
+  // ssize_t operator-(const Iterator &other) const noexcept {
+  // }
 };
 
 template <typename CharT, std::input_iterator It>
@@ -413,9 +421,10 @@ template <typename CharT, std::input_iterator It>
   requires std::convertible_to<std::iter_value_t<It>,
                                std::basic_string_view<CharT>>
 struct iterator_traits<args2::parser::Iterator<CharT, It>> {
+  using iterator_concept = std::forward_iterator_tag;
   using iterator_category = std::forward_iterator_tag;
   using value_type = args2::parser::Result<CharT>;
-  using difference_type = void;
+  using difference_type = ssize_t;
   using pointer = const args2::parser::Result<CharT> *;
   using reference = args2::parser::Result<CharT>;
 };
