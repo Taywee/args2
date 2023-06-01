@@ -14,30 +14,27 @@
 
 namespace args2 {
 namespace argv {
+/** An argv iterator type.
+    When passed argc and argv, it will iterate argv as string_views.
+    All end Iterators compare equal, even default-constructed ones.
+*/
 template <typename CharT> class Iterator {
 private:
-  const CharT **argv;
   int argc;
+  const CharT **argv;
   std::basic_string_view<CharT> value;
 
 public:
-  Iterator(const char **argv, int argc) noexcept
-      : argv(argv), argc(argc), value(*argv) {}
-  Iterator() noexcept : argv(nullptr), argc(0) {}
-
-  constexpr bool operator==(const Iterator &other) const noexcept {
-    // Special case for default-constructed end iterator
-    return (argc == 0 && other.argc == 0) ||
-           (argv == other.argv && argc == other.argc);
-  }
-
-  constexpr bool operator!=(const Iterator &other) const noexcept = default;
+  Iterator(int argc, const CharT **argv) noexcept
+      : argc(argc), argv(argv), value(*argv) {}
+  Iterator() noexcept : argc(0), argv(nullptr) {}
 
   const std::basic_string_view<CharT> &operator*() const noexcept {
     return value;
   }
 
   Iterator &operator++() noexcept {
+    --argc;
     ++argv;
     value = *argv;
     return *this;
@@ -48,6 +45,7 @@ public:
     return prev;
   }
   Iterator &operator--() noexcept {
+    ++argc;
     --argv;
     value = *argv;
     return *this;
@@ -97,52 +95,22 @@ Iterator<CharT> operator+(const int n, const Iterator<CharT> &it) noexcept {
   return it + n;
 }
 
-template <typename CharT, std::input_iterator It>
-  requires std::convertible_to<std::iter_value_t<It>,
-                               std::basic_string_view<CharT>>
-class Argv {
+/** An argv range type.
+ */
+template <typename CharT> class Argv {
 public:
-  using iterator = Iterator<CharT, It>;
+  using iterator = Iterator<CharT>;
 
 private:
-  It begin_;
-  It end_;
-
-  std::unordered_set<CharT> short_flags;
-  std::unordered_set<CharT> short_value_flags;
-  std::unordered_set<std::basic_string_view<CharT>> long_flags;
-  std::unordered_set<std::basic_string_view<CharT>> long_value_flags;
+  int argc;
+  const CharT **argv;
 
 public:
-  Argv(It begin, It end, std::unordered_set<CharT> short_flags,
-       std::unordered_set<CharT> short_value_flags,
-       std::unordered_set<std::basic_string_view<CharT>> long_flags,
-       std::unordered_set<std::basic_string_view<CharT>>
-           long_value_flags) noexcept
-      : begin_(begin), end_(end), short_flags(short_flags),
-        long_flags(long_flags), short_value_flags(short_value_flags),
-        long_value_flags(long_value_flags) {}
+  Argv(int argc, const CharT **argv) noexcept : argc(argc), argv(argv) {}
 
-  Argv(const std::ranges::range auto &range,
-       std::unordered_set<CharT> short_flags,
-       std::unordered_set<CharT> short_value_flags,
-       std::unordered_set<std::basic_string_view<CharT>> long_flags,
-       std::unordered_set<std::basic_string_view<CharT>>
-           long_value_flags) noexcept
-      : begin_(std::ranges::begin(range)), end_(std::ranges::end(range)),
-        short_flags(short_flags), long_flags(long_flags),
-        short_value_flags(short_value_flags),
-        long_value_flags(long_value_flags) {}
+  iterator begin() const noexcept { return iterator(argc, argv); }
 
-  iterator begin() const noexcept {
-    return iterator(begin_, end_, &short_flags, &short_value_flags, &long_flags,
-                    &long_value_flags);
-  }
-
-  iterator end() const noexcept {
-    return iterator(end_, end_, &short_flags, &short_value_flags, &long_flags,
-                    &long_value_flags);
-  }
+  iterator end() const noexcept { return iterator(0, argv + argc); }
 };
 } // namespace argv
 } // namespace args2
