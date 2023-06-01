@@ -335,7 +335,7 @@ public:
         long_value_flags(long_value_flags) {
     current_item = next();
   }
-  Iterator() noexcept { current_item = next(); }
+  Iterator() noexcept {}
 
   bool operator==(const Iterator &other) const noexcept {
     // Special case for default-constructed end iterator
@@ -344,9 +344,7 @@ public:
            (it == other.it && short_flags_block == other.short_flags_block &&
             current_item == other.current_item);
   }
-  bool operator!=(const Iterator &other) const noexcept {
-    return !(*this == other);
-  }
+  bool operator!=(const Iterator &other) const noexcept = default;
 
   const Result<CharT> &operator*() const noexcept { return *current_item; }
 
