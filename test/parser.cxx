@@ -184,3 +184,26 @@ TEST_CASE("Parser fails on missing value", "[longflags]") {
               args2::parser::LongFlag<char>("delta"))),
       });
 }
+
+TEST_CASE("Parser can iterate all types in all orders", "[alltypes]") {
+  const std::vector<std::string> args{"-acepsilon", "--alpha", "zeta", "--gamma=eta", "-d", "-btheta", "--delta", "-abcd", "iota"};
+  using Parser = args2::parser::Parser<char, decltype(args.begin())>;
+
+  Parser parser(args, {'a', 'b'}, {'c', 'd'}, {"alpha", "beta"}, {"gamma", "delta"});
+
+  using Iterator = Parser::iterator;
+
+  std::vector<std::iterator_traits<Iterator>::value_type> collection;
+  std::ranges::copy(parser, std::back_inserter(collection));
+  REQUIRE(collection ==
+          std::vector<std::iterator_traits<Iterator>::value_type>{
+              args2::parser::Result<char>(args2::parser::ShortFlag<char>('a')),
+              args2::parser::Result<char>(args2::parser::ShortValueFlag<char>('c', "epsilon")),
+              args2::parser::Result<char>(args2::parser::LongFlag<char>("alpha")),
+              args2::parser::Result<char>(args2::parser::Positional<char>("zeta")),
+              args2::parser::Result<char>(args2::parser::LongValueFlag<char>("gamma", "eta")),
+              args2::parser::Result<char>(args2::parser::ShortValueFlag<char>('d', "-btheta")),
+              args2::parser::Result<char>(args2::parser::LongValueFlag<char>("delta", "-abcd")),
+              args2::parser::Result<char>(args2::parser::Positional<char>("iota")),
+          });
+}

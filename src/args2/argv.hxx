@@ -12,166 +12,7 @@
 #include <variant>
 
 namespace args2 {
-namespace parser {
-/** Similar to a type traits object, statically defines separators for each char
- * type.
- * This can be used to customize the parser to a minimal degree, but probably
- * shouldn't be.
- */
-template <typename CharT> struct Separators;
-
-using namespace std::literals::string_view_literals;
-
-template <> struct Separators<char> {
-  static constexpr std::string_view positional_separator = "--"sv;
-  static constexpr std::string_view long_prefix = "--"sv;
-  static constexpr std::string_view short_prefix = "-"sv;
-  static constexpr std::string_view long_value_separator = "="sv;
-};
-
-template <> struct Separators<wchar_t> {
-  static constexpr std::wstring_view positional_separator = L"--"sv;
-  static constexpr std::wstring_view long_prefix = L"--"sv;
-  static constexpr std::wstring_view short_prefix = L"-"sv;
-  static constexpr std::wstring_view long_value_separator = L"="sv;
-};
-
-template <> struct Separators<char8_t> {
-  static constexpr std::u8string_view positional_separator = u8"--"sv;
-  static constexpr std::u8string_view long_prefix = u8"--"sv;
-  static constexpr std::u8string_view short_prefix = u8"-"sv;
-  static constexpr std::u8string_view long_value_separator = u8"="sv;
-};
-
-template <> struct Separators<char16_t> {
-  static constexpr std::u16string_view positional_separator = u"--"sv;
-  static constexpr std::u16string_view long_prefix = u"--"sv;
-  static constexpr std::u16string_view short_prefix = u"-"sv;
-  static constexpr std::u16string_view long_value_separator = u"="sv;
-};
-
-template <> struct Separators<char32_t> {
-  static constexpr std::u32string_view positional_separator = U"--"sv;
-  static constexpr std::u32string_view long_prefix = U"--"sv;
-  static constexpr std::u32string_view short_prefix = U"-"sv;
-  static constexpr std::u32string_view long_value_separator = U"="sv;
-};
-
-/** A short flag without a value.  These can cluster.
- */
-template <typename CharT> struct ShortFlag {
-  CharT flag;
-
-  auto operator<=>(const ShortFlag &) const noexcept = default;
-};
-
-template <typename CharT>
-std::ostream &operator<<(std::basic_ostream<CharT> &os,
-                         const ShortFlag<CharT> &value) {
-  os << Separators<CharT>::short_prefix << value.flag;
-  return os;
-}
-
-/** A long flag without a value.
- */
-template <typename CharT> struct LongFlag {
-  std::basic_string_view<CharT> flag;
-
-  auto operator<=>(const LongFlag &) const noexcept = default;
-};
-
-template <typename CharT>
-std::ostream &operator<<(std::basic_ostream<CharT> &os,
-                         const LongFlag<CharT> &value) {
-  os << Separators<CharT>::long_prefix << value.flag;
-  return os;
-}
-
-/** A short flag with a value.  This can be on the tail end of a short flag
- * cluster, and the value may be appended to the end or specified as the next
- * argument.
- */
-template <typename CharT> struct ShortValueFlag {
-  CharT flag;
-  std::basic_string_view<CharT> value;
-
-  auto operator<=>(const ShortValueFlag &) const noexcept = default;
-};
-
-template <typename CharT>
-std::ostream &operator<<(std::basic_ostream<CharT> &os,
-                         const ShortValueFlag<CharT> &value) {
-  os << Separators<CharT>::short_prefix << value.flag << value.value;
-  return os;
-}
-
-/** A long flag with a value.  The value may be the next argument, or attached
- * to this one separated by the separator.
- */
-template <typename CharT> struct LongValueFlag {
-  std::basic_string_view<CharT> flag;
-  std::basic_string_view<CharT> value;
-
-  auto operator<=>(const LongValueFlag &) const noexcept = default;
-};
-
-template <typename CharT>
-std::ostream &operator<<(std::basic_ostream<CharT> &os,
-                         const LongValueFlag<CharT> &value) {
-  os << Separators<CharT>::long_value_prefix << value.flag
-     << Separators<CharT>::long_value_separator << value.value;
-  return os;
-}
-
-/** A positional argument.
- */
-template <typename CharT> struct Positional {
-  std::basic_string_view<CharT> value;
-
-  auto operator<=>(const Positional &) const noexcept = default;
-};
-
-template <typename CharT>
-std::ostream &operator<<(std::basic_ostream<CharT> &os,
-                         const Positional<CharT> &value) {
-  os << value.value;
-  return os;
-}
-
-template <typename CharT>
-using Token =
-    std::variant<ShortFlag<CharT>, LongFlag<CharT>, ShortValueFlag<CharT>,
-                 LongValueFlag<CharT>, Positional<CharT>>;
-
-// If a value was expected but not received.
-template <typename CharT> struct ExpectedValueError {
-  std::variant<ShortFlag<CharT>, LongFlag<CharT>> flag;
-
-  auto operator<=>(const ExpectedValueError &) const noexcept = default;
-};
-
-// If a value was not expected but we got a long flag with an equal sign.
-template <typename CharT> struct UnexpectedValueError {
-  std::variant<ShortValueFlag<CharT>, LongValueFlag<CharT>> flag;
-
-  auto operator<=>(const UnexpectedValueError &) const noexcept = default;
-};
-
-// Got an unknown flag, don't know whether it wanted a value or not.
-template <typename CharT> struct UnknownFlagError {
-  std::variant<ShortFlag<CharT>, LongFlag<CharT>> flag;
-
-  auto operator<=>(const UnknownFlagError &) const noexcept = default;
-};
-
-template <typename CharT>
-using Error =
-    std::variant<ExpectedValueError<CharT>, UnexpectedValueError<CharT>,
-                 UnknownFlagError<CharT>>;
-
-template <typename CharT>
-using Result = std::variant<Token<CharT>, Error<CharT>>;
-
+namespace argv {
 template <typename CharT, std::input_iterator It>
   requires std::convertible_to<std::iter_value_t<It>,
                                std::basic_string_view<CharT>>
@@ -364,7 +205,7 @@ public:
 template <typename CharT, std::input_iterator It>
   requires std::convertible_to<std::iter_value_t<It>,
                                std::basic_string_view<CharT>>
-class Parser {
+class Argv {
 public:
   using iterator = Iterator<CharT, It>;
 
@@ -378,7 +219,7 @@ private:
   std::unordered_set<std::basic_string_view<CharT>> long_value_flags;
 
 public:
-  Parser(It begin, It end, std::unordered_set<CharT> short_flags,
+  Argv(It begin, It end, std::unordered_set<CharT> short_flags,
          std::unordered_set<CharT> short_value_flags,
          std::unordered_set<std::basic_string_view<CharT>> long_flags,
          std::unordered_set<std::basic_string_view<CharT>>
@@ -387,7 +228,7 @@ public:
         long_flags(long_flags), short_value_flags(short_value_flags),
         long_value_flags(long_value_flags) {}
 
-  Parser(const std::ranges::range auto &range,
+  Argv(const std::ranges::range auto &range,
          std::unordered_set<CharT> short_flags,
          std::unordered_set<CharT> short_value_flags,
          std::unordered_set<std::basic_string_view<CharT>> long_flags,
@@ -408,19 +249,19 @@ public:
                     &long_value_flags);
   }
 };
-} // namespace parser
+} // namespace argv
 } // namespace args2
 
 namespace std {
 template <typename CharT, std::input_iterator It>
   requires std::convertible_to<std::iter_value_t<It>,
                                std::basic_string_view<CharT>>
-struct iterator_traits<args2::parser::Iterator<CharT, It>> {
+struct iterator_traits<args2::argv::Iterator<CharT, It>> {
   using iterator_concept = std::forward_iterator_tag;
   using iterator_category = std::forward_iterator_tag;
-  using value_type = args2::parser::Result<CharT>;
+  using value_type = args2::argv::Result<CharT>;
   using difference_type = ssize_t;
-  using pointer = const args2::parser::Result<CharT> *;
-  using reference = args2::parser::Result<CharT>;
+  using pointer = const args2::argv::Result<CharT> *;
+  using reference = args2::argv::Result<CharT>;
 };
 } // namespace std
